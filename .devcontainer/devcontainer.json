@@ -1,0 +1,26 @@
+{
+    "name": "Dev container",
+    "image": "mcr.microsoft.com/devcontainers/base:latest",
+    "features": {
+        "ghcr.io/devcontainers/features/dotnet:2": {
+            "version": "9.0"
+        },
+        "ghcr.io/devcontainers/features/azure-cli:1": {
+            "version": "latest",
+            "installBicep": true
+        },
+        "ghcr.io/devcontainers/features/git:1": {}
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-azuretools.vscode-bicep",
+                "ms-dotnettools.csdevkit",
+                "github.copilot",
+                "redhat.vscode-yaml",
+                "timonwong.shellcheck",
+                "foxundermoon.shell-format"
+            ]
+        }
+    }
+}
