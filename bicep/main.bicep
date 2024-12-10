@@ -30,6 +30,16 @@ module resourceGroupDeployment 'br/public:avm/res/resources/resource-group:0.4.0
   }
 }
 
+resource storageBlobDataOwnerRoleDefinition 'Microsoft.Authorization/roleDefinitions@2022-05-01-preview' existing = {
+  name: 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
+  scope: subscription()
+}
+
+resource eventHubDataReceiverRoleDefinition 'Microsoft.Authorization/roleDefinitions@2022-05-01-preview' existing = {
+  name: 'a638d3c7-ab3a-418d-83e6-5f17a39d4fde'
+  scope: subscription()
+}
+
 module logAnalyticsWorkspaceDeployment 'br/public:avm/res/operational-insights/workspace:0.9.0' = {
   scope: resourceGroup(resourceGroupName)
   name: 'log-analytics-workspace-deployment'
@@ -304,5 +314,27 @@ module functionAppDeployment 'br/public:avm/res/web/site:0.10.0' = {
         version: '9.0'
       }
     }
+  }
+}
+
+module functionAppStorageAccountRoleAssignment 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.1' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'function-app-storage-account-role-assignment-deployment'
+  params: {
+    principalId: functionAppDeployment.outputs.systemAssignedMIPrincipalId
+    resourceId: storageAccountDeployment.outputs.resourceId
+    roleDefinitionId: storageBlobDataOwnerRoleDefinition.id
+    principalType: 'ServicePrincipal'
+  }
+}
+
+module functionAppEventHubRoleAssignment 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.1' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'function-app-event-hub-role-assignment-deployment'
+  params: {
+    principalId: functionAppDeployment.outputs.systemAssignedMIPrincipalId
+    resourceId: '${eventHubNamespaceDeployment.outputs.resourceId}/eventhubs/${storageLogsEventHubName}'
+    roleDefinitionId: eventHubDataReceiverRoleDefinition.id
+    principalType: 'ServicePrincipal'
   }
 }
