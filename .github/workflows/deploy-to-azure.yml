@@ -51,7 +51,7 @@ jobs:
           set -euo pipefail
 
           echo "Publishing code..."
-          OUTPUT_FOLDER="{{ runner.temp }}/functionappoutput"
+          OUTPUT_FOLDER="${{ runner.temp }}/functionappoutput"
           PROJECT_PATH="${{ github.workspace }}/functionapp/functionapp.csproj"
           dotnet publish "$PROJECT_PATH" \
             --configuration Release \
