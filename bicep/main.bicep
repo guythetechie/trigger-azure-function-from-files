@@ -192,26 +192,3 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
     ]
   }
 }
-
-module containerRegistryDeployment 'br/public:avm/res/container-registry/registry:0.6.0' = {
-  scope: resourceGroup(resourceGroupName)
-  name: 'container-registry-deployment'
-  params: {
-    name: containerRegistryName
-    location: location
-    acrAdminUserEnabled: false
-    acrSku: 'Basic'
-    diagnosticSettings: [
-      {
-        name: 'enable-all'
-        logAnalyticsDestinationType: 'Dedicated'
-        logCategoriesAndGroups: [
-          {
-            categoryGroup: 'AllLogs'
-          }
-        ]
-        workspaceResourceId: logAnalyticsWorkspaceDeployment.outputs.resourceId
-      }
-    ]
-  }
-}
