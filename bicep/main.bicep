@@ -38,6 +38,7 @@ module virtualNetworkDeployment 'br/public:avm/res/network/virtual-network:0.5.1
 
 module eventHubNamespaceDeployment 'br/public:avm/res/event-hub/namespace:0.7.1' = {
   scope: resourceGroup(resourceGroupName)
+  dependsOn: [resourceGroupDeployment]
   name: 'event-hub-namespace-deployment'
   params: {
     location: location
@@ -74,7 +75,6 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
       shares: [
         {
           name: fileShareName
-          enabledProtocols: 'NFS'
         }
       ]
     }
