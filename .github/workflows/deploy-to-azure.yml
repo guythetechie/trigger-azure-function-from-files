@@ -45,10 +45,30 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo "Publishing function app..."
+          echo "Publishing code..."
+          OUTPUT_FOLDER="{{ runner.temp }}/functionappoutput"
+          PROJECT_PATH="${{ github.workspace }}/functionapp/functionapp.csproj"
+          dotnet publish "$PROJECT_PATH" \
+            --configuration Release \
+            --output "$OUTPUT_FOLDER"
+
+          echo "Copying host.json to output..."
+          cp "${{ github.workspace }}/functionapp/host.json" "$OUTPUT_FOLDER"
+
+          cd "$OUTPUT_FOLDER"
+          dir
+
+          echo "Zipping output folder..."
+          ZIP_FILE_PATH="${{ runner.temp }}/functionapp.zip"
+          zip -r "$ZIP_FILE_PATH" "$OUTPUT_FOLDER"
+
+          echo "Deploying function app..."
           # DEPLOYMENT_STACK_NAME="${{ steps.deploy_bicep_file.outputs.DEPLOYMENT_STACK_NAME }}"
           DEPLOYMENT_STACK_NAME="trigger-function-from-files"
           DEPLOYMENT_STACK=$(az stack sub show -n "$DEPLOYMENT_STACK_NAME")
+          RESOURCE_GROUP_NAME=$(echo "$DEPLOYMENT_STACK" | jq -r '.outputs.resourceGroupName.value')
           FUNCTION_APP_NAME=$(echo "$DEPLOYMENT_STACK" | jq -r '.outputs.functionAppName.value')
-          cd "${{ github.workspace }}/functionapp"
-          func azure functionapp publish "$FUNCTION_APP_NAME"
+          az functionapp deployment source config-zip \
+            --name "$FUNCTION_APP_NAME" \
+            --resource-group "$(echo "$DEPLOYMENT_STACK" | jq -r '.outputs.resourceGroupName.value')" \
+            --src "$ZIP_FILE_PATH"

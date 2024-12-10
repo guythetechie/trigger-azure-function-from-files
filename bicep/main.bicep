@@ -351,3 +351,6 @@ module functionAppEventHubRoleAssignment 'br/public:avm/ptn/authorization/resour
     principalType: 'ServicePrincipal'
   }
 }
+
+output resourceGroupName string = resourceGroupName
+output functionAppName string = functionAppName
