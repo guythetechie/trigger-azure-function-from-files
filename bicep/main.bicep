@@ -36,6 +36,11 @@ resource storageBlobDataOwnerRoleDefinition 'Microsoft.Authorization/roleDefinit
   scope: subscription()
 }
 
+resource storageFileDataPrivilegedReader 'Microsoft.Authorization/roleDefinitions@2022-05-01-preview' existing = {
+  name: 'b8eda974-7b85-4f76-af95-65846b26df6d'
+  scope: subscription()
+}
+
 resource eventHubDataReceiverRoleDefinition 'Microsoft.Authorization/roleDefinitions@2022-05-01-preview' existing = {
   name: 'a638d3c7-ab3a-418d-83e6-5f17a39d4fde'
   scope: subscription()
@@ -199,6 +204,7 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
         {
           name: 'enable-all'
           logAnalyticsDestinationType: 'Dedicated'
+          metricCategories: []
           logCategoriesAndGroups: [
             {
               categoryGroup: 'AllLogs'
@@ -212,6 +218,7 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
       diagnosticSettings: [
         {
           name: 'send-storage-write-to-event-hub'
+          metricCategories: []
           logCategoriesAndGroups: [
             {
               category: 'StorageWrite'
@@ -223,6 +230,7 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
         {
           name: 'enable-all'
           logAnalyticsDestinationType: 'Dedicated'
+          metricCategories: []
           logCategoriesAndGroups: [
             {
               categoryGroup: 'AllLogs'
@@ -360,12 +368,23 @@ module functionAppDeployment 'br/public:avm/res/web/site:0.10.0' = {
   }
 }
 
-module functionAppStorageAccountRoleAssignment 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.1' = {
+module functionStorageAccountBlobRoleAssignemnt 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.1' = {
   scope: resourceGroup(resourceGroupName)
-  name: 'function-app-storage-account-role-assignment-deployment'
+  name: 'function-app-storage-account-blob-role-assignment-deployment'
   params: {
     principalId: functionAppDeployment.outputs.systemAssignedMIPrincipalId
     resourceId: storageAccountDeployment.outputs.resourceId
+    roleDefinitionId: storageBlobDataOwnerRoleDefinition.id
+    principalType: 'ServicePrincipal'
+  }
+}
+
+module functionStorageAccountFileRoleAssignemnt 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.1' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'function-app-storage-account-file-role-assignment-deployment'
+  params: {
+    principalId: functionAppDeployment.outputs.systemAssignedMIPrincipalId
+    resourceId: '${storageAccountDeployment.outputs.resourceId}/fileServices/default/fileshares/${fileShareName}'
     roleDefinitionId: storageBlobDataOwnerRoleDefinition.id
     principalType: 'ServicePrincipal'
   }

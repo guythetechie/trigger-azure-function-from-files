@@ -32,7 +32,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          DEPLOYMENT_STACK_NAME="trigger-function-from-files"
+          DEPLOYMENT_STACK_NAME="trigger-function-from-files2"
 
           echo "Creating deployment stack..."
           az stack sub create \

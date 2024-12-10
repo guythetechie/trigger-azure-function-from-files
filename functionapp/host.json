@@ -9,5 +9,5 @@
             "enableLiveMetricsFilters": true
         }
     },
-    "telemetryMode": "openTelemetry"
+    "telemetryMode": "OpenTelemetry"
 }
