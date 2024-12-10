@@ -39,7 +39,7 @@ jobs:
             --action-on-unmanage "DeleteAll" \
             --deny-settings-mode none \
             --location "eastus" \
-            --name "$(DEPLOYMENT_STACK_NAME)" \
+            --name "$DEPLOYMENT_STACK_NAME" \
             --template-file "${{ github.workspace }}/bicep/main.bicep" \
             --yes
 
