@@ -65,11 +65,17 @@ module eventHubNamespaceDeployment 'br/public:avm/res/event-hub/namespace:0.7.1'
       }
     ]
     publicNetworkAccess: 'Disabled'
+    networkRuleSets: {
+      name: 'default'
+      defaultAction: 'Deny'
+      publicNetworkAccess: 'Disabled'
+      trustedServiceAccessEnabled: true
+    }
     privateEndpoints: [
       {
         name: '${eventHubNamespaceName}-pep'
         customNetworkInterfaceName: '${eventHubNamespaceName}-nic'
-        service: 'eventhub'
+        service: 'namespace'
         subnetResourceId: virtualNetworkDeployment.outputs.subnetResourceIds[0]
         privateDnsZoneGroup: {
           name: eventHubNamespaceName
