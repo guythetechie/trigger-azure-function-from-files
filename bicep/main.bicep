@@ -150,9 +150,23 @@ module eventHubNamespaceDeployment 'br/public:avm/res/event-hub/namespace:0.7.1'
   }
 }
 
-module storagePrivateDnsZone 'br/public:avm/res/network/private-dns-zone:0.6.0' = {
+module storageBlobPrivateDnsZone 'br/public:avm/res/network/private-dns-zone:0.6.0' = {
   scope: resourceGroup(resourceGroupName)
-  name: 'storage-private-dns-zone-deployment'
+  name: 'storage-file-private-dns-zone-deployment'
+  params: {
+    name: 'privatelink.blob.${environment().suffixes.storage}'
+    location: 'global'
+    virtualNetworkLinks: [
+      {
+        virtualNetworkResourceId: virtualNetworkDeployment.outputs.resourceId
+      }
+    ]
+  }
+}
+
+module storageFilePrivateDnsZone 'br/public:avm/res/network/private-dns-zone:0.6.0' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'storage-file-private-dns-zone-deployment'
   params: {
     name: 'privatelink.file.${environment().suffixes.storage}'
     location: 'global'
@@ -226,16 +240,31 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
     publicNetworkAccess: 'Disabled'
     privateEndpoints: [
       {
-        name: '${storageAccountName}-pep'
-        customNetworkInterfaceName: '${storageAccountName}-nic'
+        name: '${storageAccountName}-blob-pep'
+        customNetworkInterfaceName: '${storageAccountName}-blob-nic'
+        service: 'blob'
+        subnetResourceId: privateLinkSubnetResourceId
+        privateDnsZoneGroup: {
+          name: storageAccountName
+          privateDnsZoneGroupConfigs: [
+            {
+              name: storageBlobPrivateDnsZone.outputs.name
+              privateDnsZoneResourceId: storageBlobPrivateDnsZone.outputs.resourceId
+            }
+          ]
+        }
+      }
+      {
+        name: '${storageAccountName}-file-pep'
+        customNetworkInterfaceName: '${storageAccountName}-file-nic'
         service: 'file'
         subnetResourceId: privateLinkSubnetResourceId
         privateDnsZoneGroup: {
           name: storageAccountName
           privateDnsZoneGroupConfigs: [
             {
-              name: storagePrivateDnsZone.outputs.name
-              privateDnsZoneResourceId: storagePrivateDnsZone.outputs.resourceId
+              name: storageFilePrivateDnsZone.outputs.name
+              privateDnsZoneResourceId: storageFilePrivateDnsZone.outputs.resourceId
             }
           ]
         }
