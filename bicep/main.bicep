@@ -21,6 +21,7 @@ var appServicePlanName = '${functionAppName}-plan'
 
 var privateLinkSubnetResourceId = '${virtualNetworkDeployment.outputs.resourceId}/subnets/${privateLinkSubnetName}'
 var vnetIntegrationSubnetResourceId = '${virtualNetworkDeployment.outputs.resourceId}/subnets/${vnetIntegrationSubnetName}'
+var serviceBusDomainName = 'servicebus.windows.net'
 
 module resourceGroupDeployment 'br/public:avm/res/resources/resource-group:0.4.0' = {
   name: 'resource-group-deployment'
@@ -87,7 +88,7 @@ module serviceBusPrivateDnsZone 'br/public:avm/res/network/private-dns-zone:0.6.
   name: 'service-bus-private-dns-zone-deployment'
   dependsOn: [resourceGroupDeployment]
   params: {
-    name: 'privatelink.servicebus.windows.net'
+    name: 'privatelink.${serviceBusDomainName}'
     location: 'global'
     virtualNetworkLinks: [
       {
@@ -283,6 +284,18 @@ module functionAppDeployment 'br/public:avm/res/web/site:0.10.0' = {
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
           value: applicationInsightsDeployment.outputs.connectionString
+        }
+        {
+          name: 'EVENT_HUB_NAME'
+          value: storageLogsEventHubName
+        }
+        {
+          name: 'EVENT_HUB_CONNECTION__fullyQualifiedNamespace'
+          value: '${eventHubNamespaceDeployment.outputs.name}.${serviceBusDomainName}'
+        }
+        {
+          name: 'EVENT_HUB_CONNECTION__credential'
+          value: 'managedidentity'
         }
       ]
       cors: {
