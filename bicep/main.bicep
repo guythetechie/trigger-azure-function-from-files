@@ -131,7 +131,6 @@ module eventHubNamespaceDeployment 'br/public:avm/res/event-hub/namespace:0.7.1'
     networkRuleSets: {
       name: 'default'
       defaultAction: 'Deny'
-      publicNetworkAccess: 'Disabled'
       trustedServiceAccessEnabled: true
     }
     privateEndpoints: [
@@ -245,7 +244,10 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
         }
       ]
     }
-    publicNetworkAccess: 'Disabled'
+    networkAcls: {
+      defaultAction: 'Deny'
+      bypass: 'AzureServices'
+    }
     privateEndpoints: [
       {
         name: '${storageAccountName}-blob-pep'
@@ -385,7 +387,7 @@ module functionStorageAccountFileRoleAssignemnt 'br/public:avm/ptn/authorization
   params: {
     principalId: functionAppDeployment.outputs.systemAssignedMIPrincipalId
     resourceId: '${storageAccountDeployment.outputs.resourceId}/fileServices/default/fileshares/${fileShareName}'
-    roleDefinitionId: storageBlobDataOwnerRoleDefinition.id
+    roleDefinitionId: storageFileDataPrivilegedReader.id
     principalType: 'ServicePrincipal'
   }
 }
