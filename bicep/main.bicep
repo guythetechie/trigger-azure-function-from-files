@@ -78,6 +78,7 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
         }
       ]
     }
+    publicNetworkAccess: 'Disabled'
     privateEndpoints: [
       {
         name: '${storageAccountName}-pep'
