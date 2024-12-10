@@ -8,6 +8,8 @@ var resourceGroupScopePrefix = '${prefix}-${take(uniqueString(subscription().id,
 var virtualNetworkName = '${resourceGroupScopePrefix}-vnet'
 var privateLinkSubnetName = 'private-link'
 var eventHubNamespaceName = '${resourceGroupScopePrefix}-ehns'
+var azureMonitorEventHubAuthorizationRuleName = 'AzureMonitor'
+var storageLogsEventHubName = '${storageAccountName}-files'
 var storageAccountName = replace('${resourceGroupScopePrefix}stor', '-', '')
 var fileShareName = 'uploads'
 
@@ -58,12 +60,23 @@ module eventHubNamespaceDeployment 'br/public:avm/res/event-hub/namespace:0.7.1'
     location: location
     name: eventHubNamespaceName
     skuName: 'Standard'
+    authorizationRules: [
+      {
+        name: azureMonitorEventHubAuthorizationRuleName
+        rights: [
+          'Listen'
+          'Manage'
+          'Send'
+        ]
+      }
+    ]
     eventhubs: [
       {
-        name: '${storageAccountName}-files'
+        name: storageLogsEventHubName
         partitionCount: 1
       }
     ]
+    disableLocalAuth: false
     publicNetworkAccess: 'Disabled'
     networkRuleSets: {
       name: 'default'
@@ -123,6 +136,18 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
         }
       ]
     }
+    diagnosticSettings: [
+      {
+        name: 'send-storage-write-to-event-hub'
+        logCategoriesAndGroups: [
+          {
+            category: 'StorageWrite'
+          }
+        ]
+        eventHubAuthorizationRuleResourceId: '${eventHubNamespaceDeployment.outputs.resourceId}/authorizationrules/${azureMonitorEventHubAuthorizationRuleName}'
+        eventHubName: storageLogsEventHubName
+      }
+    ]
     publicNetworkAccess: 'Disabled'
     privateEndpoints: [
       {
