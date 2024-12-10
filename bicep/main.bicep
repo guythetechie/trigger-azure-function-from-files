@@ -1,7 +1,7 @@
 targetScope = 'subscription'
 
 var location = 'eastus'
-var prefix = 'func-from-file'
+var prefix = 'trigger-from-file'
 var subscriptionScopePrefix = '${prefix}-${take(uniqueString(subscription().id), 6)}'
 var resourceGroupName = '${subscriptionScopePrefix}-rg'
 var resourceGroupScopePrefix = '${prefix}-${take(uniqueString(subscription().id, resourceGroupName), 6)}'

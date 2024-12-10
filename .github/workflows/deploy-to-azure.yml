@@ -30,6 +30,6 @@ jobs:
             --action-on-unmanage "DeleteAll" \
             --deny-settings-mode none \
             --location "eastus" \
-            --name "trigger-function-from-files" \
+            --name "trigger-function-from-files2" \
             --template-file "${{ github.workspace }}/bicep/main.bicep" \
             --yes
