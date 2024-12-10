@@ -130,24 +130,24 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
     allowSharedKeyAccess: false
     allowBlobPublicAccess: false
     fileServices: {
+      diagnosticSettings: [
+        {
+          name: 'send-storage-write-to-event-hub'
+          logCategoriesAndGroups: [
+            {
+              category: 'StorageWrite'
+            }
+          ]
+          eventHubAuthorizationRuleResourceId: '${eventHubNamespaceDeployment.outputs.resourceId}/authorizationrules/${azureMonitorEventHubAuthorizationRuleName}'
+          eventHubName: storageLogsEventHubName
+        }
+      ]
       shares: [
         {
           name: fileShareName
         }
       ]
     }
-    diagnosticSettings: [
-      {
-        name: 'send-storage-write-to-event-hub'
-        logCategoriesAndGroups: [
-          {
-            category: 'StorageWrite'
-          }
-        ]
-        eventHubAuthorizationRuleResourceId: '${eventHubNamespaceDeployment.outputs.resourceId}/authorizationrules/${azureMonitorEventHubAuthorizationRuleName}'
-        eventHubName: storageLogsEventHubName
-      }
-    ]
     publicNetworkAccess: 'Disabled'
     privateEndpoints: [
       {
