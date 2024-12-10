@@ -21,6 +21,11 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Install .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "9.x"
+
       # - name: Deploy Bicep file
       #   id: deploy_bicep_file
       #   shell: bash
