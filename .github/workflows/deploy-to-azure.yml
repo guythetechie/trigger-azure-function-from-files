@@ -55,13 +55,8 @@ jobs:
           PROJECT_PATH="${{ github.workspace }}/functionapp/functionapp.csproj"
           dotnet publish "$PROJECT_PATH" \
             --configuration Release \
+            --runtime linux-x64 \
             --output "$OUTPUT_FOLDER"
-
-          echo "Copying host.json to output..."
-          cp "${{ github.workspace }}/functionapp/host.json" "$OUTPUT_FOLDER"
-
-          cd "$OUTPUT_FOLDER"
-          dir
 
           echo "Zipping output folder..."
           ZIP_FILE_PATH="${{ runner.temp }}/functionapp.zip"

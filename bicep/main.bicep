@@ -152,7 +152,7 @@ module eventHubNamespaceDeployment 'br/public:avm/res/event-hub/namespace:0.7.1'
 
 module storageBlobPrivateDnsZone 'br/public:avm/res/network/private-dns-zone:0.6.0' = {
   scope: resourceGroup(resourceGroupName)
-  name: 'storage-file-private-dns-zone-deployment'
+  name: 'storage-blob-private-dns-zone-deployment'
   params: {
     name: 'privatelink.blob.${environment().suffixes.storage}'
     location: 'global'
@@ -338,6 +338,7 @@ module functionAppDeployment 'br/public:avm/res/web/site:0.10.0' = {
     vnetImagePullEnabled: true
     virtualNetworkSubnetId: vnetIntegrationSubnetResourceId
     functionAppConfig: {
+      use32BitWorkerProcess: false
       deployment: {
         storage: {
           type: 'blobContainer'
