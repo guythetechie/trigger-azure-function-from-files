@@ -36,14 +36,53 @@ module virtualNetworkDeployment 'br/public:avm/res/network/virtual-network:0.5.1
   }
 }
 
+module serviceBusPrivateDnsZone 'br/public:avm/res/network/private-dns-zone:0.6.0' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'service-bus-private-dns-zone-deployment'
+  dependsOn: [resourceGroupDeployment]
+  params: {
+    name: 'privatelink.servicebus.windows.net'
+    location: 'global'
+    virtualNetworkLinks: [
+      {
+        virtualNetworkResourceId: virtualNetworkDeployment.outputs.resourceId
+      }
+    ]
+  }
+}
+
 module eventHubNamespaceDeployment 'br/public:avm/res/event-hub/namespace:0.7.1' = {
   scope: resourceGroup(resourceGroupName)
-  dependsOn: [resourceGroupDeployment]
   name: 'event-hub-namespace-deployment'
   params: {
     location: location
     name: eventHubNamespaceName
-    skuName: 'Basic'
+    skuName: 'Standard'
+    eventhubs: [
+      {
+        name: '${storageAccountName}-files'
+        partitionCount: 1
+      }
+    ]
+    publicNetworkAccess: 'Disabled'
+    privateEndpoints: [
+      {
+        name: '${eventHubNamespaceName}-pep'
+        customNetworkInterfaceName: '${eventHubNamespaceName}-nic'
+        service: 'eventhub'
+        subnetResourceId: virtualNetworkDeployment.outputs.subnetResourceIds[0]
+        privateDnsZoneGroup: {
+          name: eventHubNamespaceName
+          privateDnsZoneGroupConfigs: [
+            {
+              // Event hub uses the same private DNS zone as service bus
+              name: serviceBusPrivateDnsZone.outputs.name
+              privateDnsZoneResourceId: serviceBusPrivateDnsZone.outputs.resourceId
+            }
+          ]
+        }
+      }
+    ]
   }
 }
 
