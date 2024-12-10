@@ -2,9 +2,10 @@ targetScope = 'subscription'
 
 var location = 'eastus'
 var prefix = 'trigger-from-file'
-var subscriptionScopePrefix = '${prefix}-${take(uniqueString(subscription().id), 3)}'
+var subscriptionScopePrefix = '${prefix}-${take(uniqueString(subscription().id), 4)}'
 var resourceGroupName = '${subscriptionScopePrefix}-rg'
-var resourceGroupScopePrefix = '${prefix}-${take(uniqueString(subscription().id, resourceGroupName), 6)}'
+var resourceGroupScopePrefix = '${prefix}-${take(uniqueString(subscription().id, resourceGroupName), 4)}'
+var logAnalyticsWorkspaceName = '${resourceGroupScopePrefix}-law'
 var virtualNetworkName = '${resourceGroupScopePrefix}-vnet'
 var privateLinkSubnetName = 'private-link'
 var eventHubNamespaceName = '${resourceGroupScopePrefix}-ehns'
@@ -12,12 +13,25 @@ var azureMonitorEventHubAuthorizationRuleName = 'AzureMonitor'
 var storageLogsEventHubName = '${storageAccountName}-files'
 var storageAccountName = replace('${resourceGroupScopePrefix}stor', '-', '')
 var fileShareName = 'uploads'
+var containerRegistryName = replace('${resourceGroupScopePrefix}acr', '-', '')
+
+var privateLinkSubnetResourceId = '${virtualNetworkDeployment.outputs.resourceId}/subnets/${privateLinkSubnetName}'
 
 module resourceGroupDeployment 'br/public:avm/res/resources/resource-group:0.4.0' = {
   name: 'resource-group-deployment'
   params: {
     name: resourceGroupName
     location: location
+  }
+}
+
+module logAnalyticsWorkspaceDeployment 'br/public:avm/res/operational-insights/workspace:0.9.0' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'log-analytics-workspace-deployment'
+  params: {
+    name: logAnalyticsWorkspaceName
+    location: location
+    skuName: 'PerGB2018'
   }
 }
 
@@ -89,7 +103,7 @@ module eventHubNamespaceDeployment 'br/public:avm/res/event-hub/namespace:0.7.1'
         name: '${eventHubNamespaceName}-pep'
         customNetworkInterfaceName: '${eventHubNamespaceName}-nic'
         service: 'namespace'
-        subnetResourceId: virtualNetworkDeployment.outputs.subnetResourceIds[0]
+        subnetResourceId: privateLinkSubnetResourceId
         privateDnsZoneGroup: {
           name: eventHubNamespaceName
           privateDnsZoneGroupConfigs: [
@@ -141,6 +155,16 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
           eventHubAuthorizationRuleResourceId: '${eventHubNamespaceDeployment.outputs.resourceId}/authorizationrules/${azureMonitorEventHubAuthorizationRuleName}'
           eventHubName: storageLogsEventHubName
         }
+        {
+          name: 'enable-all'
+          logAnalyticsDestinationType: 'Dedicated'
+          logCategoriesAndGroups: [
+            {
+              categoryGroup: 'AllLogs'
+            }
+          ]
+          workspaceResourceId: logAnalyticsWorkspaceDeployment.outputs.resourceId
+        }
       ]
       shares: [
         {
@@ -154,7 +178,7 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
         name: '${storageAccountName}-pep'
         customNetworkInterfaceName: '${storageAccountName}-nic'
         service: 'file'
-        subnetResourceId: virtualNetworkDeployment.outputs.subnetResourceIds[0]
+        subnetResourceId: privateLinkSubnetResourceId
         privateDnsZoneGroup: {
           name: storageAccountName
           privateDnsZoneGroupConfigs: [
@@ -164,6 +188,29 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
             }
           ]
         }
+      }
+    ]
+  }
+}
+
+module containerRegistryDeployment 'br/public:avm/res/container-registry/registry:0.6.0' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'container-registry-deployment'
+  params: {
+    name: containerRegistryName
+    location: location
+    acrAdminUserEnabled: false
+    acrSku: 'Basic'
+    diagnosticSettings: [
+      {
+        name: 'enable-all'
+        logAnalyticsDestinationType: 'Dedicated'
+        logCategoriesAndGroups: [
+          {
+            categoryGroup: 'AllLogs'
+          }
+        ]
+        workspaceResourceId: logAnalyticsWorkspaceDeployment.outputs.resourceId
       }
     ]
   }
