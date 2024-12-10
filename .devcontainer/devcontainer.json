@@ -3,7 +3,8 @@
     "image": "mcr.microsoft.com/devcontainers/base:latest",
     "features": {
         "ghcr.io/devcontainers/features/dotnet:2": {
-            "version": "9.0"
+            "version": "9.0",
+            "aspNetCoreRuntimeVersions": "8.0"
         },
         "ghcr.io/devcontainers/features/azure-cli:1": {
             "version": "latest",
@@ -11,6 +12,8 @@
         },
         "ghcr.io/devcontainers/features/git:1": {}
     },
+    // Install Azure Functions Core Tools
+    "postCreateCommand": "bash .devcontainer/install.sh",
     "customizations": {
         "vscode": {
             "extensions": [
