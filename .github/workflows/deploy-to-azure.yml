@@ -34,14 +34,14 @@ jobs:
 
           DEPLOYMENT_STACK_NAME="trigger-function-from-files"
 
-          echo "Creating deployment stack..."
-          az stack sub create \
-            --action-on-unmanage "DeleteAll" \
-            --deny-settings-mode none \
-            --location "eastus" \
-            --name "$DEPLOYMENT_STACK_NAME" \
-            --template-file "${{ github.workspace }}/bicep/main.bicep" \
-            --yes
+          # echo "Creating deployment stack..."
+          # az stack sub create \
+          #   --action-on-unmanage "DeleteAll" \
+          #   --deny-settings-mode none \
+          #   --location "eastus" \
+          #   --name "$DEPLOYMENT_STACK_NAME" \
+          #   --template-file "${{ github.workspace }}/bicep/main.bicep" \
+          #   --yes
 
           # Pass deployment stack name to output
           echo "DEPLOYMENT_STACK_NAME=$DEPLOYMENT_STACK_NAME" >> $GITHUB_OUTPUT
