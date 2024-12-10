@@ -127,9 +127,9 @@ module eventHubNamespaceDeployment 'br/public:avm/res/event-hub/namespace:0.7.1'
       }
     ]
     disableLocalAuth: false
-    publicNetworkAccess: 'Disabled'
     networkRuleSets: {
       name: 'default'
+      defaultAction: 'Deny'
       trustedServiceAccessEnabled: true
     }
     privateEndpoints: [

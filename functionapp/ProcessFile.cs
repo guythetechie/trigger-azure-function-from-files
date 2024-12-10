@@ -12,7 +12,7 @@ public class ProcessFile(ILogger<ProcessFile> logger)
     {
         foreach (EventData @event in events)
         {
-            logger.LogInformation("Event Body: {body}", @event.Body);
+            logger.LogInformation("Event Body: {body}", @event.EventBody.ToString());
             logger.LogInformation("Event Content-Type: {contentType}", @event.ContentType);
         }
     }
