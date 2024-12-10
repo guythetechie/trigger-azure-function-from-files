@@ -6,16 +6,21 @@ var subscriptionScopePrefix = '${prefix}-${take(uniqueString(subscription().id),
 var resourceGroupName = '${subscriptionScopePrefix}-rg'
 var resourceGroupScopePrefix = '${prefix}-${take(uniqueString(subscription().id, resourceGroupName), 4)}'
 var logAnalyticsWorkspaceName = '${resourceGroupScopePrefix}-law'
+var applicationInsightsName = '${resourceGroupScopePrefix}-app-insights'
 var virtualNetworkName = '${resourceGroupScopePrefix}-vnet'
 var privateLinkSubnetName = 'private-link'
+var vnetIntegrationSubnetName = 'vnet-integration'
 var eventHubNamespaceName = '${resourceGroupScopePrefix}-ehns'
 var azureMonitorEventHubAuthorizationRuleName = 'AzureMonitor'
 var storageLogsEventHubName = '${storageAccountName}-files'
 var storageAccountName = replace('${resourceGroupScopePrefix}stor', '-', '')
+var functionAppContainerName = 'function-app'
 var fileShareName = 'uploads'
-var containerRegistryName = replace('${resourceGroupScopePrefix}acr', '-', '')
+var functionAppName = '${resourceGroupScopePrefix}-func'
+var appServicePlanName = '${functionAppName}-plan'
 
 var privateLinkSubnetResourceId = '${virtualNetworkDeployment.outputs.resourceId}/subnets/${privateLinkSubnetName}'
+var vnetIntegrationSubnetResourceId = '${virtualNetworkDeployment.outputs.resourceId}/subnets/${vnetIntegrationSubnetName}'
 
 module resourceGroupDeployment 'br/public:avm/res/resources/resource-group:0.4.0' = {
   name: 'resource-group-deployment'
@@ -35,6 +40,16 @@ module logAnalyticsWorkspaceDeployment 'br/public:avm/res/operational-insights/w
   }
 }
 
+module applicationInsightsDeployment 'br/public:avm/res/insights/component:0.3.0' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'application-insights-deployment'
+  params: {
+    name: applicationInsightsName
+    location: location
+    workspaceResourceId: logAnalyticsWorkspaceDeployment.outputs.resourceId
+  }
+}
+
 module virtualNetworkDeployment 'br/public:avm/res/network/virtual-network:0.5.1' = {
   scope: resourceGroup(resourceGroupName)
   dependsOn: [resourceGroupDeployment]
@@ -47,6 +62,11 @@ module virtualNetworkDeployment 'br/public:avm/res/network/virtual-network:0.5.1
       {
         name: privateLinkSubnetName
         addressPrefix: '10.0.0.0/28'
+      }
+      {
+        name: vnetIntegrationSubnetName
+        addressPrefix: '10.0.0.64/26'
+        delegation: 'Microsoft.App/environments'
       }
     ]
   }
@@ -143,6 +163,26 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
     skuName: 'Standard_LRS'
     allowSharedKeyAccess: false
     allowBlobPublicAccess: false
+    blobServices: {
+      containers: [
+        {
+          name: functionAppContainerName
+          publicAccess: 'None'
+        }
+      ]
+      diagnosticSettings: [
+        {
+          name: 'enable-all'
+          logAnalyticsDestinationType: 'Dedicated'
+          logCategoriesAndGroups: [
+            {
+              categoryGroup: 'AllLogs'
+            }
+          ]
+          workspaceResourceId: logAnalyticsWorkspaceDeployment.outputs.resourceId
+        }
+      ]
+    }
     fileServices: {
       diagnosticSettings: [
         {
@@ -190,5 +230,79 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
         }
       }
     ]
+  }
+}
+
+module appServicePlanDeployment 'br/public:avm/res/web/serverfarm:0.3.0' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'app-service-plan-deployment'
+  params: {
+    name: appServicePlanName
+    location: location
+    kind: 'FunctionApp'
+    skuName: 'FC1'
+    reserved: true
+  }
+}
+
+module functionAppDeployment 'br/public:avm/res/web/site:0.10.0' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'function-app-deployment'
+  params: {
+    name: functionAppName
+    location: location
+    kind: 'functionapp,linux'
+    managedIdentities: {
+      systemAssigned: true
+    }
+    serverFarmResourceId: appServicePlanDeployment.outputs.resourceId
+    siteConfig: {
+      appSettings: [
+        {
+          name: 'AzureWebJobsStorage__blobServiceUri'
+          value: storageAccountDeployment.outputs.serviceEndpoints.blob
+        }
+        {
+          name: 'AzureWebJobsStorage__queueServiceUri'
+          value: storageAccountDeployment.outputs.serviceEndpoints.queue
+        }
+        {
+          name: 'AzureWebJobsStorage__tableServiceUri'
+          value: storageAccountDeployment.outputs.serviceEndpoints.table
+        }
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: applicationInsightsDeployment.outputs.connectionString
+        }
+      ]
+      cors: {
+        allowedOrigins: [
+          'https://portal.azure.com'
+        ]
+      }
+    }
+    vnetRouteAllEnabled: false
+    vnetContentShareEnabled: true
+    vnetImagePullEnabled: true
+    virtualNetworkSubnetId: vnetIntegrationSubnetResourceId
+    functionAppConfig: {
+      deployment: {
+        storage: {
+          type: 'blobContainer'
+          value: uri(storageAccountDeployment.outputs.primaryBlobEndpoint, functionAppContainerName)
+          authentication: {
+            type: 'SystemAssignedIdentity'
+          }
+        }
+      }
+      scaleAndConcurrency: {
+        maximumInstanceCount: 100
+        instanceMemoryMB: 2048
+      }
+      runtime: {
+        name: 'dotnet-isolated'
+        version: '9.0'
+      }
+    }
   }
 }
