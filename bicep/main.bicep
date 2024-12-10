@@ -2,7 +2,7 @@ targetScope = 'subscription'
 
 var location = 'eastus'
 var prefix = 'trigger-from-file'
-var subscriptionScopePrefix = '${prefix}-${take(uniqueString(subscription().id), 6)}'
+var subscriptionScopePrefix = '${prefix}-${take(uniqueString(subscription().id), 4)}'
 var resourceGroupName = '${subscriptionScopePrefix}-rg'
 var resourceGroupScopePrefix = '${prefix}-${take(uniqueString(subscription().id, resourceGroupName), 6)}'
 var virtualNetworkName = '${resourceGroupScopePrefix}-vnet'
