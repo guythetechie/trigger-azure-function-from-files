@@ -4,7 +4,10 @@ using Azure.Storage.Files.Shares;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Frozen;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -17,36 +20,37 @@ public class ProcessFile(ILogger<ProcessFile> logger, TokenCredential tokenCrede
     [Function(nameof(ProcessFile))]
     public async Task Run([EventHubTrigger("%EVENT_HUB_NAME%", Connection = "EVENT_HUB_CONNECTION")] EventData[] events, CancellationToken cancellationToken)
     {
-        foreach (var data in events)
+        var uris = events.SelectMany(GetUrisFromEvent).ToFrozenSet();
+
+        foreach (var uri in uris)
         {
-            if (TryGetUriFromEvent(data, out var uri))
-            {
-                await LogFileProperties(uri, tokenCredential, logger, cancellationToken);
-            }
+            await LogFileProperties(uri, tokenCredential, logger, cancellationToken);
         }
     }
 
-    private static bool TryGetUriFromEvent(EventData data, [NotNullWhen(true)] out Uri? value)
+    private static IEnumerable<Uri> GetUrisFromEvent(EventData data)
     {
         // Parse the event body as a JSON object
         if (data.EventBody.TryAsJsonObject(out var jsonObject)
-            // Ensure the event has a "category" property with the value "StorageWrite"
-            && EventHasStorageWriteCategory(jsonObject)
-            // Ensure the event has an "operationName" property with the value "CreateFile"
-            && EventHasCreateFileOperationName(jsonObject)
-            // Ensure the event has a "statusCode" property with a success status code
-            && EventHasSuccessStatusCode(jsonObject)
-            // Ensure the event has a "uri" property with an absolute URI
-            && jsonObject.TryGetAbsoluteUriPropertyValue("uri", out var uri))
+            // Ensure the event has a "records" property with an array value
+            && jsonObject.TryGetJsonArrayPropertyValue("records", out var records))
         {
-            // Remove any query string or fragment from the URI
-            value = new UriBuilder(uri) { Query = null, Fragment = null }.Uri;
-            return true;
-        }
-        else
-        {
-            value = null;
-            return false;
+            foreach (var record in records)
+            {
+                if (record is JsonObject recordObject
+                    // Ensure the event has a "category" property with the value "StorageWrite"
+                    && EventHasStorageWriteCategory(recordObject)
+                    // Ensure the event has an "operationName" property with the value "CreateFile"
+                    && EventHasCreateFileOperationName(recordObject)
+                    // Ensure the event has a "statusCode" property with a success status code
+                    && EventHasSuccessStatusCode(recordObject)
+                    // Ensure the event has a "uri" property with an absolute URI
+                    && recordObject.TryGetAbsoluteUriPropertyValue("uri", out var uri))
+                {
+                    // Remove any query string or fragment from the URI
+                    yield return new UriBuilder(uri) { Query = null, Fragment = null }.Uri;
+                }
+            }
         }
     }
 
@@ -94,6 +98,21 @@ file static class JsonObjectModule
         catch (JsonException)
         {
             jsonObject = null;
+            return false;
+        }
+    }
+
+    public static bool TryGetJsonArrayPropertyValue(this JsonObject jsonObject, string propertyName, [NotNullWhen(true)] out JsonArray? value)
+    {
+        if (jsonObject.TryGetPropertyValue(propertyName, out var property)
+            && property is JsonArray jsonArray)
+        {
+            value = jsonArray;
+            return true;
+        }
+        else
+        {
+            value = null;
             return false;
         }
     }
