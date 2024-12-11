@@ -127,11 +127,11 @@ module eventHubNamespaceDeployment 'br/public:avm/res/event-hub/namespace:0.7.1'
       }
     ]
     disableLocalAuth: false
-    networkRuleSets: {
-      name: 'default'
-      defaultAction: 'Deny'
-      trustedServiceAccessEnabled: true
-    }
+    // networkRuleSets: {
+    //   name: 'default'
+    //   defaultAction: 'Deny'
+    //   trustedServiceAccessEnabled: true
+    // }
     privateEndpoints: [
       {
         name: '${eventHubNamespaceName}-pep'

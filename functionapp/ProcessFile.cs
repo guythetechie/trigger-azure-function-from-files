@@ -1,4 +1,6 @@
+using System;
 using Azure.Messaging.EventHubs;
+using Azure.Storage.Files.Shares;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
