@@ -60,7 +60,8 @@ jobs:
 
           echo "Zipping output folder..."
           ZIP_FILE_PATH="${{ runner.temp }}/functionapp.zip"
-          zip -r "$ZIP_FILE_PATH" "$OUTPUT_FOLDER"
+          cd "$OUTPUT_FOLDER"
+          zip -r "$ZIP_FILE_PATH" "./"
 
           echo "Deploying function app..."
           # DEPLOYMENT_STACK_NAME="${{ steps.deploy_bicep_file.outputs.DEPLOYMENT_STACK_NAME }}"
