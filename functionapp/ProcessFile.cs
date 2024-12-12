@@ -1,6 +1,8 @@
 using Azure.Core;
 using Azure.Messaging.EventHubs;
 using Azure.Storage.Files.Shares;
+using Azure.Storage.Files.Shares.Models;
+using Azure.Storage.Files.Shares.Specialized;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using System;
@@ -69,12 +71,18 @@ public class ProcessFile(ILogger<ProcessFile> logger, TokenCredential tokenCrede
 
     private static async ValueTask LogFileProperties(Uri uri, TokenCredential tokenCredential, ILogger logger, CancellationToken cancellationToken)
     {
-        var client = new ShareFileClient(uri, tokenCredential);
+        var client = new ShareFileClient(uri,
+                                         tokenCredential,
+                                         new ShareClientOptions
+                                         {
+                                            ShareTokenIntent = ShareTokenIntent.Backup
+                                         });
+
         var fileName = client.Name;
         var properties = await client.GetPropertiesAsync(cancellationToken);
         var fileSize = properties.Value.ContentLength;
 
-        logger.LogInformation("File {fileName} has size {fileSize} bytes", fileName, fileSize);
+        logger.LogInformation("File {FileName} has size {FileSize} bytes.", fileName, fileSize);
     }
 }
 
