@@ -48,6 +48,7 @@ resource eventHubDataReceiverRoleDefinition 'Microsoft.Authorization/roleDefinit
 
 module logAnalyticsWorkspaceDeployment 'br/public:avm/res/operational-insights/workspace:0.9.0' = {
   scope: resourceGroup(resourceGroupName)
+  dependsOn: [resourceGroupDeployment]
   name: 'log-analytics-workspace-deployment'
   params: {
     name: logAnalyticsWorkspaceName
@@ -284,6 +285,7 @@ module storageAccountDeployment 'br/public:avm/res/storage/storage-account:0.14.
 
 module appServicePlanDeployment 'br/public:avm/res/web/serverfarm:0.3.0' = {
   scope: resourceGroup(resourceGroupName)
+  dependsOn: [resourceGroupDeployment]
   name: 'app-service-plan-deployment'
   params: {
     name: appServicePlanName
