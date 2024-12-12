@@ -363,7 +363,7 @@ module functionAppDeployment 'br/public:avm/res/web/site:0.10.0' = {
       }
       runtime: {
         name: 'dotnet-isolated'
-        version: '9'
+        version: '9.0'
       }
     }
   }
